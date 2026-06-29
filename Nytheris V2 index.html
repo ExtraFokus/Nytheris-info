@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nytheris – Lifesteal SMP</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #07050f;
+            color: #fff;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* ── Bakgrund ── */
+        .bg {
+            position: fixed; inset: 0; z-index: 0;
+            background:
+                radial-gradient(ellipse 80% 55% at 50% -10%, rgba(140,30,255,0.22) 0%, transparent 65%),
+                radial-gradient(ellipse 55% 40% at 85% 95%, rgba(200,0,60,0.15) 0%, transparent 55%),
+                radial-gradient(ellipse 40% 30% at 8% 70%, rgba(100,20,200,0.09) 0%, transparent 50%),
+                #07050f;
+        }
+        .grid-overlay {
+            position: fixed; inset: 0; z-index: 0;
+            background-image:
+                linear-gradient(rgba(150,50,255,0.045) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(150,50,255,0.045) 1px, transparent 1px);
+            background-size: 48px 48px;
+        }
+        #stars { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
+        .star { position: absolute; background: white; border-radius: 50%; animation: twinkle linear infinite; }
+        @keyframes twinkle { 0%,100%{opacity:.1} 50%{opacity:.75} }
+
+        /* ── Navbar ── */
+        nav {
+            position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+            display: flex; align-items: center; justify-content: center; gap: 4px;
+            padding: 14px 24px;
+            background: rgba(7,5,15,0.8);
+            backdrop-filter: blur(14px);
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+        }
+        .nav-link {
+            font-size: 13px; font-weight: 500; color: rgba(255,255,255,0.5);
+            text-decoration: none; padding: 7px 18px; border-radius: 8px;
+            transition: color 0.2s, background 0.2s; letter-spacing: 0.2px;
+            cursor: pointer; border: none; background: none; font-family: 'Inter', sans-serif;
+        }
+        .nav-link:hover { color: #e9d5ff; background: rgba(192,132,252,0.08); }
+        .nav-link.active { color: #e9d5ff; background: rgba(192,132,252,0.1); }
+
+        /* ── Pages ── */
+        .page { display: none; }
+        .page.active { display: block; }
+
+        /* ── Layout ── */
+        .center-wrap {
+            position: relative; z-index: 1;
+            display: flex; flex-direction: column; align-items: center;
+            padding: 100px 24px 64px; text-align: center;
+        }
+
+        /* ── Eyebrow ── */
+        .eyebrow {
+            font-size: 10.5px; font-weight: 600; letter-spacing: 3.5px;
+            text-transform: uppercase; color: #c084fc;
+            border: 1px solid rgba(192,132,252,0.22); background: rgba(192,132,252,0.06);
+            padding: 5px 20px; border-radius: 20px; margin-bottom: 30px;
+        }
+
+        /* ── Titel ── */
+        .title {
+            font-family: 'Cinzel', serif;
+            font-size: clamp(3rem, 9vw, 5.5rem); font-weight: 900; line-height: 1;
+            background: linear-gradient(140deg, #f5eeff 0%, #c084fc 42%, #7c3aed 100%);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+            margin-bottom: 8px; letter-spacing: -1px;
+        }
+        .subtitle {
+            font-family: 'Cinzel', serif;
+            font-size: clamp(0.85rem, 2.5vw, 1.1rem); font-weight: 700;
+            letter-spacing: 7px; text-transform: uppercase; color: #e05555; margin-bottom: 36px;
+        }
+
+        /* ── Lifesteal badge ── */
+        .lifesteal-badge {
+            display: inline-flex; align-items: center; gap: 9px;
+            background: rgba(220,40,40,0.09); border: 1px solid rgba(220,60,60,0.28);
+            border-radius: 10px; padding: 9px 20px; font-size: 13px; font-weight: 600;
+            color: #ff7575; margin-bottom: 30px; letter-spacing: 0.2px;
+        }
+        .heart { animation: heartbeat 1.4s ease-in-out infinite; display: inline-block; }
+        @keyframes heartbeat { 0%,100%{transform:scale(1)} 28%{transform:scale(1.38)} 58%{transform:scale(0.88)} }
+
+        /* ── Beskrivning ── */
+        .desc {
+            font-size: 1rem; color: rgba(255,255,255,0.55);
+            max-width: 520px; line-height: 1.8; margin-bottom: 48px;
+        }
+
+        /* ── Feature-kort ── */
+        .features {
+            display: grid; grid-template-columns: repeat(3, 1fr);
+            gap: 12px; width: 100%; max-width: 620px; margin-bottom: 48px;
+        }
+        .feat {
+            background: rgba(255,255,255,0.025); border: 1px solid rgba(255,255,255,0.065);
+            border-radius: 16px; padding: 22px 16px;
+            display: flex; flex-direction: column; align-items: center;
+            transition: border-color 0.25s, background 0.25s, transform 0.25s;
+        }
+        .feat:hover {
+            border-color: rgba(192,132,252,0.32); background: rgba(192,132,252,0.05);
+            transform: translateY(-2px);
+        }
+        .feat-icon { font-size: 26px; margin-bottom: 11px; display: block; }
+        .feat-title { font-size: 13px; font-weight: 600; color: #ead6ff; margin-bottom: 5px; }
+        .feat-desc { font-size: 11px; color: rgba(255,255,255,0.38); line-height: 1.55; text-align: center; }
+
+        /* ── Stats ── */
+        .stats {
+            display: flex; gap: 0; flex-wrap: wrap; justify-content: center;
+            border-top: 1px solid rgba(255,255,255,0.055);
+            padding-top: 34px; width: 100%; max-width: 620px;
+        }
+        .stat-item {
+            flex: 1; min-width: 100px;
+            display: flex; flex-direction: column; align-items: center;
+            padding: 0 12px;
+            border-right: 1px solid rgba(255,255,255,0.055);
+        }
+        .stat-item:last-child { border-right: none; }
+        .stat-num { font-family: 'Cinzel', serif; font-size: 1.5rem; font-weight: 700; color: #c084fc; line-height: 1; }
+        .stat-label { font-size: 10px; color: rgba(255,255,255,0.3); letter-spacing: 1.5px; text-transform: uppercase; margin-top: 6px; }
+
+        /* ── Regler-sida ── */
+        .rules-wrap {
+            position: relative; z-index: 1;
+            max-width: 620px; margin: 0 auto; padding: 100px 24px 64px;
+        }
+        .page-heading {
+            font-family: 'Cinzel', serif; font-size: clamp(1.6rem, 5vw, 2.4rem);
+            font-weight: 900; color: #ead6ff; margin-bottom: 6px; text-align: center;
+        }
+        .page-sub {
+            font-size: 13px; color: rgba(255,255,255,0.4); text-align: center;
+            margin-bottom: 40px; letter-spacing: 0.3px;
+        }
+
+        .rule-section { margin-bottom: 10px; }
+        .rule-section-header {
+            display: flex; align-items: center; gap: 12px;
+            background: rgba(255,255,255,0.025); border: 1px solid rgba(255,255,255,0.065);
+            border-radius: 12px 12px 0 0; padding: 14px 18px;
+            border-bottom: none;
+        }
+        .rule-section.closed .rule-section-header { border-radius: 12px; border-bottom: 1px solid rgba(255,255,255,0.065); }
+        .rule-section-icon { font-size: 18px; }
+        .rule-section-title { font-size: 14px; font-weight: 600; color: #ead6ff; flex: 1; }
+        .rule-toggle { font-size: 12px; color: rgba(255,255,255,0.3); cursor: pointer; user-select: none; transition: transform 0.2s; }
+        .rule-section.closed .rule-toggle { transform: rotate(-90deg); }
+
+        .rule-body {
+            background: rgba(255,255,255,0.015); border: 1px solid rgba(255,255,255,0.065);
+            border-top: none; border-radius: 0 0 12px 12px;
+            padding: 16px 18px; overflow: hidden;
+            transition: max-height 0.3s ease, padding 0.3s ease;
+        }
+        .rule-section.closed .rule-body { max-height: 0 !important; padding-top: 0; padding-bottom: 0; }
+
+        .rule-item {
+            display: flex; align-items: flex-start; gap: 10px;
+            padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.04);
+        }
+        .rule-item:last-child { border-bottom: none; padding-bottom: 0; }
+        .rule-dot { width: 6px; height: 6px; border-radius: 50%; background: #7c3aed; margin-top: 6px; flex-shrink: 0; }
+        .rule-dot.red { background: #e05555; }
+        .rule-text { font-size: 13px; color: rgba(255,255,255,0.6); line-height: 1.6; }
+        .rule-text strong { color: #ead6ff; }
+
+        .summary-box {
+            margin-top: 28px; background: rgba(124,58,237,0.07);
+            border: 1px solid rgba(124,58,237,0.2); border-radius: 14px; padding: 20px 22px;
+        }
+        .summary-title { font-size: 12px; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; color: #c084fc; margin-bottom: 14px; }
+        .summary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .summary-item { display: flex; align-items: center; gap: 8px; font-size: 13px; color: rgba(255,255,255,0.6); }
+        .summary-item.yes::before { content: '✓'; color: #4ade80; font-weight: 700; }
+        .summary-item.no::before  { content: '✗'; color: #f87171; font-weight: 700; }
+
+        /* ── Info-sida ── */
+        .info-wrap {
+            position: relative; z-index: 1;
+            max-width: 620px; margin: 0 auto; padding: 100px 24px 64px;
+        }
+
+        /* IP-ruta */
+        .ip-box {
+            display: flex; align-items: center; justify-content: center; gap: 10px;
+            background: rgba(192,132,252,0.07); border: 1px dashed rgba(192,132,252,0.35);
+            border-radius: 14px; padding: 18px 22px; margin-bottom: 28px;
+            font-family: 'Cinzel', serif; font-size: 1.05rem; font-weight: 700;
+            color: #ead6ff; letter-spacing: 1px; text-align: center;
+            user-select: all;
+        }
+        .ip-box .ip-label { color: #c084fc; }
+        .ip-box .ip-value { color: rgba(255,255,255,0.45); font-weight: 600; font-size: 0.95rem; }
+
+        .info-card {
+            background: rgba(255,255,255,0.025); border: 1px solid rgba(255,255,255,0.07);
+            border-radius: 18px; padding: 28px 26px; margin-bottom: 18px;
+        }
+        .info-card-title {
+            font-family: 'Cinzel', serif; font-size: 1.05rem; font-weight: 700;
+            color: #ead6ff; margin-bottom: 18px; display: flex; align-items: center; gap: 10px;
+        }
+
+        .cmd-group { margin-bottom: 20px; }
+        .cmd-group:last-child { margin-bottom: 0; }
+        .cmd-group-title {
+            font-size: 11px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase;
+            color: #c084fc; margin-bottom: 10px;
+        }
+        .cmd-row {
+            display: flex; align-items: baseline; gap: 10px;
+            padding: 7px 0; border-bottom: 1px solid rgba(255,255,255,0.04);
+        }
+        .cmd-row:last-child { border-bottom: none; }
+        .cmd-code {
+            font-family: 'Cinzel', serif; font-size: 12.5px; font-weight: 700;
+            color: #ead6ff; background: rgba(192,132,252,0.1); border: 1px solid rgba(192,132,252,0.22);
+            border-radius: 7px; padding: 3px 9px; white-space: nowrap;
+        }
+        .cmd-desc { font-size: 12.5px; color: rgba(255,255,255,0.55); line-height: 1.5; }
+
+        .btn-row { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; margin-top: 28px; }
+
+        .btn-discord {
+            display: inline-flex; align-items: center; gap: 9px;
+            padding: 13px 26px; background: #5865F2; color: white;
+            font-weight: 600; font-size: 14px; border-radius: 11px;
+            text-decoration: none; transition: transform 0.2s, box-shadow 0.2s, background 0.2s; border: none;
+            cursor: pointer;
+        }
+        .btn-discord:hover { transform: translateY(-2px); box-shadow: 0 10px 32px rgba(88,101,242,0.4); background: #4752c4; }
+        .btn-discord svg { width: 20px; height: 20px; fill: white; }
+
+        /* ── Discord-bekräftelse modal ── */
+        .modal-overlay {
+            position: fixed; inset: 0; z-index: 1000;
+            background: rgba(5,3,10,0.72); backdrop-filter: blur(6px);
+            display: none; align-items: center; justify-content: center;
+            padding: 24px;
+        }
+        .modal-overlay.show { display: flex; }
+        .modal-box {
+            background: #110a1f; border: 1px solid rgba(192,132,252,0.25);
+            border-radius: 18px; padding: 30px 28px; max-width: 380px; width: 100%;
+            text-align: center; box-shadow: 0 30px 80px rgba(0,0,0,0.5);
+            animation: modalPop 0.18s ease;
+        }
+        @keyframes modalPop { from { transform: scale(0.92); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        .modal-icon { font-size: 30px; margin-bottom: 12px; }
+        .modal-title { font-family: 'Cinzel', serif; font-size: 1.15rem; font-weight: 700; color: #ead6ff; margin-bottom: 10px; }
+        .modal-text { font-size: 13.5px; color: rgba(255,255,255,0.55); line-height: 1.6; margin-bottom: 24px; }
+        .modal-btns { display: flex; gap: 10px; justify-content: center; }
+        .modal-btn {
+            flex: 1; padding: 11px 16px; border-radius: 10px; font-size: 13.5px; font-weight: 600;
+            cursor: pointer; border: none; transition: transform 0.15s, background 0.15s; font-family: 'Inter', sans-serif;
+        }
+        .modal-btn.confirm { background: #5865F2; color: white; }
+        .modal-btn.confirm:hover { background: #4752c4; transform: translateY(-1px); }
+        .modal-btn.cancel { background: rgba(255,255,255,0.07); color: rgba(255,255,255,0.7); }
+        .modal-btn.cancel:hover { background: rgba(255,255,255,0.12); transform: translateY(-1px); }
+
+        @media (max-width: 520px) {
+            .features { grid-template-columns: repeat(2, 1fr); }
+            .summary-grid { grid-template-columns: 1fr; }
+            .stats { gap: 0; }
+            .stat-item { min-width: 80px; }
+            .cmd-row { flex-direction: column; gap: 3px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="bg"></div>
+<div class="grid-overlay"></div>
+<div id="stars"></div>
+
+<!-- NAVBAR -->
+<nav>
+    <button class="nav-link active" onclick="showPage('hub')">Hub</button>
+    <button class="nav-link" onclick="showPage('regler')">Regler</button>
+    <button class="nav-link" onclick="showPage('info')">Info</button>
+</nav>
+
+<!-- ══ HUB ══ -->
+<div id="page-hub" class="page active">
+    <div class="center-wrap">
+        <div class="eyebrow">Lifesteal SMP</div>
+        <h1 class="title">NYTHERIS</h1>
+        <div class="subtitle">Lifesteal SMP</div>
+
+        <div class="lifesteal-badge">
+            <span class="heart">❤</span>
+            Stjäl hjärtan — eller förlora dina egna
+        </div>
+
+        <p class="desc">
+            Nytheris är ett Lifesteal SMP där varje kamp avgör din framtid.
+            Döda spelare och ta deras hjärtan, bygg allianser och kämpa för att överleva
+            i en värld där döden kostar.
+        </p>
+
+        <div class="features">
+            <div class="feat">
+                <span class="feat-icon">❤️</span>
+                <div class="feat-title">Lifesteal</div>
+                <div class="feat-desc">Stjäl hjärtan vid PvP-kills</div>
+            </div>
+            <div class="feat">
+                <span class="feat-icon">💀</span>
+                <div class="feat-title">Hardcore PvP</div>
+                <div class="feat-desc">Varje fight räknas</div>
+            </div>
+            <div class="feat">
+                <span class="feat-icon">⚔️</span>
+                <div class="feat-title">Allianser</div>
+                <div class="feat-desc">Samarbeta eller dö ensam</div>
+            </div>
+            <div class="feat">
+                <span class="feat-icon">🗺️</span>
+                <div class="feat-title">Stor karta</div>
+                <div class="feat-desc">Utforska och erövra</div>
+            </div>
+            <div class="feat">
+                <span class="feat-icon">🏆</span>
+                <div class="feat-title">Events</div>
+                <div class="feat-desc">Regelbundna server-events</div>
+            </div>
+            <div class="feat">
+                <span class="feat-icon">🌍</span>
+                <div class="feat-title">Öppen för alla</div>
+                <div class="feat-desc">Ingen ansökan krävs</div>
+            </div>
+        </div>
+
+        <div class="stats">
+            <div class="stat-item">
+                <div class="stat-num">Java</div>
+                <div class="stat-label">Edition</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-num">24/7</div>
+                <div class="stat-label">Online</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-num">SMP</div>
+                <div class="stat-label">Spelläge</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-num">❤LS</div>
+                <div class="stat-label">Lifesteal</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ══ REGLER ══ -->
+<div id="page-regler" class="page">
+    <div class="rules-wrap">
+        <div class="page-heading">Lifesteal Regler</div>
+        <div class="page-sub">Bryts reglerna kan det leda till varning, kick eller ban.</div>
+
+        <div class="rule-section" id="rs-pvp">
+            <div class="rule-section-header">
+                <span class="rule-section-icon">⚔️</span>
+                <span class="rule-section-title">PvP</span>
+                <span class="rule-toggle" onclick="toggleRule('rs-pvp')">▾</span>
+            </div>
+            <div class="rule-body" style="max-height:300px">
+                <div class="rule-item"><div class="rule-dot"></div><div class="rule-text">PvP är alltid tillåtet. Du får döda andra spelare var som helst utanför spawn.</div></div>
+                <div class="rule-item"><div class="rule-dot red"></div><div class="rule-text"><strong>Fair play gäller alltid</strong> – inga hacks, exploits eller fusk.</div></div>
+            </div>
+        </div>
+
+        <div class="rule-section" id="rs-raid">
+            <div class="rule-section-header">
+                <span class="rule-section-icon">🏚️</span>
+                <span class="rule-section-title">Baser & Raiding</span>
+                <span class="rule-toggle" onclick="toggleRule('rs-raid')">▾</span>
+            </div>
+            <div class="rule-body" style="max-height:400px">
+                <div class="rule-item"><div class="rule-dot"></div><div class="rule-text">Raiding är tillåtet. Du får bryta dig in och plundra andra spelares baser.</div></div>
+                <div class="rule-item"><div class="rule-dot"></div><div class="rule-text">Det är tillåtet att förstöra block för att komma åt loot eller ta sig in i en bas.</div></div>
+                <div class="rule-item"><div class="rule-dot red"></div><div class="rule-text"><strong>Överdriven griefing</strong> som enbart görs för att förstöra spelupplevelsen kan leda till staff-åtgärder.</div></div>
+                <div class="rule-item"><div class="rule-dot red"></div><div class="rule-text">Exploits eller buggar får inte användas för att raida.</div></div>
+            </div>
+        </div>
+
+        <div class="rule-section" id="rs-hearts">
+            <div class="rule-section-header">
+                <span class="rule-section-icon">❤️</span>
+                <span class="rule-section-title">Hjärtan & Farming</span>
+                <span class="rule-toggle" onclick="toggleRule('rs-hearts')">▾</span>
+            </div>
+            <div class="rule-body" style="max-height:300px">
+                <div class="rule-item"><div class="rule-dot red"></div><div class="rule-text"><strong>Förbjudet</strong> att farma hjärtan genom att döda samma spelare eller alternativa konton upprepade gånger.</div></div>
+                <div class="rule-item"><div class="rule-dot red"></div><div class="rule-text">Ingen samverkan för att utnyttja Lifesteal-systemet.</div></div>
+                <div class="rule-item"><div class="rule-dot"></div><div class="rule-text">Alla hjärtan ska tjänas genom legitim PvP.</div></div>
+            </div>
+        </div>
+
+        <div class="rule-section" id="rs-spawn">
+            <div class="rule-section-header">
+                <span class="rule-section-icon">🏠</span>
+                <span class="rule-section-title">Spawn & Säker zon</span>
+                <span class="rule-toggle" onclick="toggleRule('rs-spawn')">▾</span>
+            </div>
+            <div class="rule-body" style="max-height:300px">
+                <div class="rule-item"><div class="rule-dot"></div><div class="rule-text">Spawn är en säker zon.</div></div>
+                <div class="rule-item"><div class="rule-dot red"></div><div class="rule-text"><strong>Spawn camping och spawn trapping är förbjudet.</strong></div></div>
+                <div class="rule-item"><div class="rule-dot red"></div><div class="rule-text">Det är inte tillåtet att låsa in eller döda spelare som precis spawnat.</div></div>
+            </div>
+        </div>
+
+        <div class="rule-section" id="rs-konflikter">
+            <div class="rule-section-header">
+                <span class="rule-section-icon">🤝</span>
+                <span class="rule-section-title">Konflikter</span>
+                <span class="rule-toggle" onclick="toggleRule('rs-konflikter')">▾</span>
+            </div>
+            <div class="rule-body" style="max-height:300px">
+                <div class="rule-item"><div class="rule-dot"></div><div class="rule-text">Konflikter mellan spelare är en naturlig del av Lifesteal. Raids, bakhåll och attacker är tillåtna.</div></div>
+                <div class="rule-item"><div class="rule-dot"></div><div class="rule-text">Håll konflikter inom spelet och respektera andra spelare utanför PvP-situationer.</div></div>
+            </div>
+        </div>
+
+        <div class="rule-section" id="rs-staff">
+            <div class="rule-section-header">
+                <span class="rule-section-icon">🛡️</span>
+                <span class="rule-section-title">Staff</span>
+                <span class="rule-toggle" onclick="toggleRule('rs-staff')">▾</span>
+            </div>
+            <div class="rule-body" style="max-height:300px">
+                <div class="rule-item"><div class="rule-dot"></div><div class="rule-text">Staff har alltid sista ordet i alla konflikter och regelbrott.</div></div>
+                <div class="rule-item"><div class="rule-dot red"></div><div class="rule-text">Försök att hitta kryphål i reglerna räknas inte som en ursäkt.</div></div>
+            </div>
+        </div>
+
+        <div class="summary-box">
+            <div class="summary-title">Kort sagt</div>
+            <div class="summary-grid">
+                <div class="summary-item yes">PvP</div>
+                <div class="summary-item yes">Raiding</div>
+                <div class="summary-item yes">Loota baser</div>
+                <div class="summary-item no">Hjärt-farming</div>
+                <div class="summary-item no">Spawn trapping</div>
+                <div class="summary-item no">Hacks / exploits</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ══ INFO ══ -->
+<div id="page-info" class="page">
+    <div class="info-wrap">
+        <div class="page-heading">Info</div>
+        <div class="page-sub">Allt du behöver veta för att börja spela på Nytheris.</div>
+
+        <!-- IP RUTA: raden nedan (med id="server-ip") är där du skriver in din IP -->
+        <div class="ip-box">
+            <span class="ip-label">IP:</span>
+            <span class="ip-value" id="server-ip">play.nytheris.xx</span>
+        </div>
+
+        <div class="info-card">
+            <div class="info-card-title">⚔️ Kommandon</div>
+
+            <div class="cmd-group">
+                <div class="cmd-group-title">Bas & resor</div>
+                <div class="cmd-row"><span class="cmd-code">/spawn</span><span class="cmd-desc">– tp dig till spawn</span></div>
+                <div class="cmd-row"><span class="cmd-code">/rtp</span><span class="cmd-desc">– tp dig till random ställe, bra för att hitta bas-spot</span></div>
+                <div class="cmd-row"><span class="cmd-code">/home</span><span class="cmd-desc">– tp till dina hem (max 5 st)</span></div>
+            </div>
+
+            <div class="cmd-group">
+                <div class="cmd-group-title">PvP</div>
+                <div class="cmd-row"><span class="cmd-code">/bounty set [namn] [pengar]</span><span class="cmd-desc">– sätt pris på nån som du vill ska dö</span></div>
+                <div class="cmd-row"><span class="cmd-code">/heart take</span><span class="cmd-desc">– ta ut ett hjärta som du kan bära runt på</span></div>
+            </div>
+
+            <div class="cmd-group">
+                <div class="cmd-group-title">Pengar</div>
+                <div class="cmd-row"><span class="cmd-code">/bal</span><span class="cmd-desc">– kolla hur mycket pengar du har</span></div>
+                <div class="cmd-row"><span class="cmd-code">/baltop</span><span class="cmd-desc">– se vem som är rikast på servern</span></div>
+                <div class="cmd-row"><span class="cmd-code">/shop</span><span class="cmd-desc">– köp grejer med dina pengar</span></div>
+            </div>
+
+            <div class="cmd-group">
+                <div class="cmd-group-title">Annat</div>
+                <div class="cmd-row"><span class="cmd-code">/discord</span><span class="cmd-desc">– få discord-länken i chatten</span></div>
+                <div class="cmd-row"><span class="cmd-code">/settings</span><span class="cmd-desc">– dina egna inställningar</span></div>
+            </div>
+        </div>
+
+        <div class="info-card">
+            <div class="info-card-title">💰 Ekonomi & Hjärtan</div>
+            <div class="cmd-group">
+                <div class="rule-item"><div class="rule-dot"></div><div class="rule-text">Du får <strong>10 000kr var 30:e minut</strong> du är inne på servern.</div></div>
+                <div class="rule-item"><div class="rule-dot red"></div><div class="rule-text">Det kommer <strong>inte</strong> finnas <strong>/ah</strong> (auction house) eller <strong>/sell</strong>.</div></div>
+                <div class="rule-item"><div class="rule-dot"></div><div class="rule-text">Shopen kommer bara ha <strong>billiga</strong> grejer, så alla har möjlighet att köpa lite.</div></div>
+                <div class="rule-item"><div class="rule-dot"></div><div class="rule-text">Det finns en egen <strong>VIP-shop</strong> för de som har VIP-ranken.</div></div>
+                <div class="rule-item"><div class="rule-dot"></div><div class="rule-text">Du kan köpa <strong>hjärtan för 50 000kr</strong> styck.</div></div>
+                <div class="rule-item"><div class="rule-dot red"></div><div class="rule-text">Förlorar du <strong>alla dina hjärtan</strong> blir du <strong>bannad till måndag</strong>.</div></div>
+                <div class="rule-item"><div class="rule-dot"></div><div class="rule-text">På måndagar <strong>resetas</strong> allt — alla bannade spelare blir unbannade och spawnar med <strong>5 hjärtan</strong>.</div></div>
+            </div>
+        </div>
+
+        <div class="btn-row">
+            <button class="btn-discord" onclick="askDiscord()">
+                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03z"/></svg>
+                Joina Discord
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- ══ DISCORD-BEKRÄFTELSE ══ -->
+<div class="modal-overlay" id="discord-modal">
+    <div class="modal-box">
+        <div class="modal-icon">👾</div>
+        <div class="modal-title">Lämna sidan?</div>
+        <div class="modal-text">Är du säker på att du vill gå till vår Discord, eller vill du stanna på sidan?</div>
+        <div class="modal-btns">
+            <button class="modal-btn cancel" onclick="closeDiscordModal()">Stanna</button>
+            <button class="modal-btn confirm" onclick="goToDiscord()">Gå till Discord</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Stars
+    const c = document.getElementById('stars');
+    for (let i = 0; i < 110; i++) {
+        const s = document.createElement('div');
+        s.className = 'star';
+        const sz = Math.random() * 2.2 + 0.3;
+        s.style.cssText = `width:${sz}px;height:${sz}px;top:${Math.random()*100}%;left:${Math.random()*100}%;animation-delay:${Math.random()*6}s;animation-duration:${2.5+Math.random()*3.5}s`;
+        c.appendChild(s);
+    }
+
+    // Navigation
+    function showPage(id) {
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+        document.getElementById('page-' + id).classList.add('active');
+        event.currentTarget.classList.add('active');
+        window.scrollTo(0, 0);
+    }
+
+    // Rule accordion
+    function toggleRule(id) {
+        document.getElementById(id).classList.toggle('closed');
+    }
+
+    // Discord-bekräftelse
+    const DISCORD_URL = "https://discord.gg/GGkChDgbNa";
+    function askDiscord() {
+        document.getElementById('discord-modal').classList.add('show');
+    }
+    function closeDiscordModal() {
+        document.getElementById('discord-modal').classList.remove('show');
+    }
+    function goToDiscord() {
+        window.open(DISCORD_URL, '_blank');
+        closeDiscordModal();
+    }
+</script>
+</body>
+</html>
